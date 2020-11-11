@@ -17,10 +17,19 @@ public class LevelManager : MonoBehaviour
 
     [Header("Level Params")]
     public Transform initSpawnPoint;
+    public bool playMusicOnStart;
 
     private void Awake()
     {
         InitializeLevelManager();
+    }
+
+    private void Start()
+    {
+        if (playMusicOnStart)
+        {
+            StartBackgroundMusic();
+        }
     }
 
     private void Update()
@@ -50,6 +59,15 @@ public class LevelManager : MonoBehaviour
         Debug.Log("Init Spawn Manager");
 
         
+    }
+
+    public void StartBackgroundMusic()
+    {
+        if(audioManager.m_backgroundMusicList.Length > 0)
+        {
+            //audioManager.PlayMusic(1);
+            audioManager.PlayMusic("LostWorldsMusic");
+        }
     }
 
     public void SpawnPlayer(Vector3 spawnPoint)

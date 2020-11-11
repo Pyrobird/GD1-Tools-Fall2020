@@ -3,180 +3,180 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-    public class AudioManager : MonoBehaviour
+public class AudioManager : MonoBehaviour
+{
+    public AudioData[] m_backgroundMusicList;
+    [Space(10)]
+
+    public AudioData[] m_sfxList;
+
+    public static AudioManager m_instance;
+
+    [Space(30)]
+
+    [SerializeField]
+    private AudioData m_currentMusic;
+
+    [SerializeField]
+    private AudioData m_prevMusic;
+
+    private void Awake()
     {
-        public AudioData[] m_backgroundMusicList;
-        [Space(10)]
+        DontDestroyOnLoad(gameObject);
 
-        public AudioData[] m_sfxList;
+        CreateInstance();
 
-        public static AudioManager m_instance;
+        SetUpAudioArray(m_backgroundMusicList);
 
-        [Space(30)]
+        SetUpAudioArray(m_sfxList);
 
-        [SerializeField]
-        private AudioData m_currentMusic;
+        ClearCurrentPrevMusic();
+    }
 
-        [SerializeField]
-        private AudioData m_prevMusic;
-
-        private void Awake()
+    private void CreateInstance()
+    {
+        if (!m_instance)
         {
-            DontDestroyOnLoad(gameObject);
-
-            CreateInstance();
-
-            SetUpAudioArray(m_backgroundMusicList);
-
-            SetUpAudioArray(m_sfxList);
-
-            ClearCurrentPrevMusic();
+            m_instance = this;
         }
-
-        private void CreateInstance()
+        else
         {
-            if (!m_instance)
-            {
-                m_instance = this;
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
+            Destroy(gameObject);
         }
+    }
 
-        private void SetUpAudioArray(AudioData[] _array)
+    private void SetUpAudioArray(AudioData[] _array)
+    {
+        for (int i = 0; i < _array.Length; i++)
         {
-            for (int i = 0; i < _array.Length; i++)
-            {
-                GameObject t_child = new GameObject(_array[i].m_name);
-                t_child.transform.parent = transform;
+            GameObject t_child = new GameObject(_array[i].m_name);
+            t_child.transform.parent = transform;
 
-                AudioSource t_audioSource = t_child.AddComponent<AudioSource>();
+            AudioSource t_audioSource = t_child.AddComponent<AudioSource>();
 
-                _array[i].m_object = t_child;
-                _array[i].m_audioSource = t_audioSource;
+            _array[i].m_object = t_child;
+            _array[i].m_audioSource = t_audioSource;
 
-                _array[i].m_audioSource.clip = _array[i].m_audioClip;
-                _array[i].m_audioSource.volume = _array[i].m_volume;
-                _array[i].m_audioSource.pitch = _array[i].m_pitch;
-                _array[i].m_audioSource.loop = _array[i].m_looping;
-            }
+            _array[i].m_audioSource.clip = _array[i].m_audioClip;
+            _array[i].m_audioSource.volume = _array[i].m_volume;
+            _array[i].m_audioSource.pitch = _array[i].m_pitch;
+            _array[i].m_audioSource.loop = _array[i].m_looping;
         }
+    }
 
-        private void ClearCurrentPrevMusic()
+    private void ClearCurrentPrevMusic()
+    {
+        m_currentMusic = null;
+        m_prevMusic = m_currentMusic;
+    }
+
+    public void PlayMusic(string _name)
+    {
+        Debug.Log("Playing Music");
+        AudioData t_data = Array.Find(m_backgroundMusicList, bgm => bgm.m_name == _name);
+        if (t_data == null)
         {
-            m_currentMusic = null;
+            Debug.LogError("Didnt find music");
+            return;
+        }
+        else
+        {
             m_prevMusic = m_currentMusic;
+            m_currentMusic = t_data;
+            PlayNextMusicTrack();
         }
+    }
 
-        public void PlayMusic(string _name)
+    public void PlayMusic(int _id)
+    {
+        if (_id >= 0 && _id < m_backgroundMusicList.Length)
         {
             Debug.Log("Playing Music");
-            AudioData t_data = Array.Find(m_backgroundMusicList, bgm => bgm.m_name == _name);
-            if (t_data == null)
-            {
-                Debug.LogError("Didnt find music");
-                return;
-            }
-            else
-            {
-                m_prevMusic = m_currentMusic;
-                m_currentMusic = t_data;
-                PlayNextMusicTrack();
-            }
+
+            m_prevMusic = m_currentMusic;
+            m_currentMusic = m_backgroundMusicList[_id];
+
+            PlayNextMusicTrack();
         }
-
-        public void PlayMusic(int _id)
+        else
         {
-            if (_id >= 0 && _id < m_backgroundMusicList.Length)
-            {
-                Debug.Log("Playing Music");
-
-                m_prevMusic = m_currentMusic;
-                m_currentMusic = m_backgroundMusicList[_id];
-
-                PlayNextMusicTrack();
-            }
-            else
-            {
-                Debug.LogError("Didnt find music");
-                return;
-            }
+            Debug.LogError("Didnt find music");
+            return;
         }
+    }
 
-        private void PlayNextMusicTrack()
+    private void PlayNextMusicTrack()
+    {
+        m_currentMusic.m_audioSource.Play();
+        if (!m_currentMusic.m_fade && m_prevMusic.m_audioSource != null)
         {
-            m_currentMusic.m_audioSource.Play();
-            if (!m_currentMusic.m_fade && m_prevMusic.m_audioSource != null)
-            {
-                m_prevMusic.m_audioSource.Stop();
-            }
-            if (m_currentMusic.m_fade)
-            {
-                StartCoroutine(FadeIn(m_currentMusic));
-                if (m_prevMusic.m_audioSource != null)
-                {
-                    StartCoroutine(FadeOut(m_prevMusic));
-                }
-            }
+            m_prevMusic.m_audioSource.Stop();
         }
-
-        public void PlaySFX(string _name)
+        if (m_currentMusic.m_fade)
         {
-            AudioData t_data = Array.Find(m_sfxList, sfx => sfx.m_name == _name);
-            if (t_data == null)
+            StartCoroutine(FadeIn(m_currentMusic));
+            if (m_prevMusic.m_audioSource != null)
             {
-                Debug.LogError("Didnt find sound");
-                return;
-            }
-            else
-            {
-                t_data.m_audioSource.Play();
-            }
-        }
-
-        public void PlaySFX(int _id)
-        {
-            if (_id >= 0 && _id < m_sfxList.Length)
-            {
-                Debug.Log("Playing sound");
-                m_sfxList[_id].m_audioSource.Play();
-            }
-            else
-            {
-                Debug.LogError("Didnt find sound");
-                return;
-            }
-        }
-
-        private IEnumerator FadeIn(AudioData _audioData)
-        {
-            _audioData.m_audioSource.volume = 0;
-            float t_volume = _audioData.m_audioSource.volume;
-
-            while (_audioData.m_audioSource.volume < _audioData.m_volume)
-            {
-                t_volume += _audioData.m_fadeInSpeed;
-                _audioData.m_audioSource.volume = t_volume;
-                yield return new WaitForSeconds(0.1f);
-            }
-        }
-
-        private IEnumerator FadeOut(AudioData _audioData)
-        {
-            float t_volume = _audioData.m_audioSource.volume;
-
-            while (_audioData.m_audioSource.volume > 0)
-            {
-                t_volume -= _audioData.m_fadeOutSpeed;
-                _audioData.m_audioSource.volume = t_volume;
-                yield return new WaitForSeconds(0.1f);
-            }
-            if (_audioData.m_audioSource.volume == 0)
-            {
-                _audioData.m_audioSource.Stop();
-                _audioData.m_audioSource.volume = _audioData.m_volume;
+                StartCoroutine(FadeOut(m_prevMusic));
             }
         }
     }
+
+    public void PlaySFX(string _name)
+    {
+        AudioData t_data = Array.Find(m_sfxList, sfx => sfx.m_name == _name);
+        if (t_data == null)
+        {
+            Debug.LogError("Didnt find sound");
+            return;
+        }
+        else
+        {
+            t_data.m_audioSource.Play();
+        }
+    }
+
+    public void PlaySFX(int _id)
+    {
+        if (_id >= 0 && _id < m_sfxList.Length)
+        {
+            Debug.Log("Playing sound");
+            m_sfxList[_id].m_audioSource.Play();
+        }
+        else
+        {
+            Debug.LogError("Didnt find sound");
+            return;
+        }
+    }
+
+    private IEnumerator FadeIn(AudioData _audioData)
+    {
+        _audioData.m_audioSource.volume = 0;
+        float t_volume = _audioData.m_audioSource.volume;
+
+        while (_audioData.m_audioSource.volume < _audioData.m_volume)
+        {
+            t_volume += _audioData.m_fadeInSpeed;
+            _audioData.m_audioSource.volume = t_volume;
+            yield return new WaitForSeconds(0.1f);
+        }
+    }
+
+    private IEnumerator FadeOut(AudioData _audioData)
+    {
+        float t_volume = _audioData.m_audioSource.volume;
+
+        while (_audioData.m_audioSource.volume > 0)
+        {
+            t_volume -= _audioData.m_fadeOutSpeed;
+            _audioData.m_audioSource.volume = t_volume;
+            yield return new WaitForSeconds(0.1f);
+        }
+        if (_audioData.m_audioSource.volume == 0)
+        {
+            _audioData.m_audioSource.Stop();
+            _audioData.m_audioSource.volume = _audioData.m_volume;
+        }
+    }
+}
