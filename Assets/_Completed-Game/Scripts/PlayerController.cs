@@ -4,6 +4,8 @@
 using UnityEngine.UI;
 
 using System.Collections;
+using Cinemachine;
+using UnityEngine.Events;
 
 public class PlayerController : MonoBehaviour {
 	
@@ -15,6 +17,8 @@ public class PlayerController : MonoBehaviour {
 	// Create private references to the rigidbody component on the player, and the count of pick up objects picked up so far
 	private Rigidbody rb;
 	private int count;
+
+	public UnityEvent onWinEvent;
 
 	// At the start of the game..
 	void Start ()
@@ -42,6 +46,8 @@ public class PlayerController : MonoBehaviour {
 		// Create a Vector3 variable, and assign X and Z to feature our horizontal and vertical float variables above
 		Vector3 movement = new Vector3 (moveHorizontal, 0.0f, moveVertical);
 
+		movement = Camera.main.transform.TransformDirection(movement);
+
 		// Add a physical force to our Player rigidbody using our 'movement' Vector3 above, 
 		// multiplying it by 'speed' - our public player speed that appears in the inspector
 		rb.AddForce (movement * speed);
@@ -56,6 +62,9 @@ public class PlayerController : MonoBehaviour {
 		{
 			// Make the other game object (the pick up) inactive, to make it disappear
 			other.gameObject.SetActive (false);
+
+			//generate an impulse
+			GetComponent<CinemachineImpulseSource>().GenerateImpulse();
 
 			// Add one to the score variable 'count'
 			count = count + 1;
@@ -76,6 +85,7 @@ public class PlayerController : MonoBehaviour {
 		{
 			// Set the text value of our 'winText'
 			winText.text = "You Win!";
+			onWinEvent.Invoke();
 		}
 	}
 }
